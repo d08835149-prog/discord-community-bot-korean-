@@ -8,9 +8,9 @@ import {
   ensureUser,
 } from "../../database/db.js";
 
-function torontoDate() {
+function seoulDate() {
   return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Toronto",
+    timeZone: "Asia/Seoul",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -41,7 +41,7 @@ export async function execute(interaction) {
 
   const guildId = interaction.guildId;
   const userId = interaction.user.id;
-  const today = torontoDate();
+  const today = seoulDate();
 
   const useTicket =
     interaction.options.getBoolean("티켓사용") ?? false;

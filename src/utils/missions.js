@@ -1,8 +1,8 @@
 import { query } from "../database/db.js";
 
-export function torontoDate() {
+export function seoulDate() {
   return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Toronto",
+    timeZone: "Asia/Seoul",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -10,7 +10,7 @@ export function torontoDate() {
 }
 
 export async function ensureDailyMission(guildId, userId) {
-  const today = torontoDate();
+  const today = seoulDate();
 
   await query(
     `
@@ -27,6 +27,26 @@ export async function ensureDailyMission(guildId, userId) {
         mission_date
       )
       DO NOTHING
+    `,
+    [guildId, userId, today]
+  );
+
+  // 오늘 이미 출석했다면 미션에도 자동 반영
+  await query(
+    `
+      UPDATE daily_missions
+      SET attendance = GREATEST(attendance, 1),
+          updated_at = NOW()
+      WHERE guild_id = $1
+        AND user_id = $2
+        AND mission_date = $3
+        AND EXISTS (
+          SELECT 1
+          FROM users
+          WHERE guild_id = $1
+            AND user_id = $2
+            AND last_attendance = $3::date
+        )
     `,
     [guildId, userId, today]
   );

@@ -10,7 +10,7 @@ import {
 
 import {
   ensureDailyMission,
-  torontoDate,
+  seoulDate,
 } from "../../utils/missions.js";
 
 const MISSIONS = {
@@ -73,7 +73,7 @@ export async function execute(interaction) {
   await ensureUser(guildId, userId);
   await ensureDailyMission(guildId, userId);
 
-  const today = torontoDate();
+  const today = seoulDate();
   const client = await pool.connect();
 
   try {
@@ -135,7 +135,7 @@ export async function execute(interaction) {
               (mission.all_claimed ? " · 수령 완료" : "")
             )
             .setFooter({
-              text: "매일 토론토 날짜 기준 갱신",
+              text: "매일 한국시간 00:00 기준 갱신",
             }),
         ],
       });

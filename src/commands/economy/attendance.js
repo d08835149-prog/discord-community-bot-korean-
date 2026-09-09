@@ -9,20 +9,20 @@ import {
   query,
 } from "../../database/db.js";
 
-function torontoDate() {
+function seoulDate() {
   return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Toronto",
+    timeZone: "Asia/Seoul",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   }).format(new Date());
 }
 
-function yesterdayToronto() {
+function yesterdaySeoul() {
   const now = new Date();
 
   const formatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Toronto",
+    timeZone: "Asia/Seoul",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -72,7 +72,7 @@ export async function execute(interaction) {
   );
 
   const user = result.rows[0];
-  const today = torontoDate();
+  const today = seoulDate();
 
   const lastAttendance = user.last_attendance
     ? new Date(user.last_attendance)
@@ -91,7 +91,7 @@ export async function execute(interaction) {
 
   let streak = 1;
 
-  if (lastAttendance === yesterdayToronto()) {
+  if (lastAttendance === yesterdaySeoul()) {
     streak = user.attendance_streak + 1;
   }
 

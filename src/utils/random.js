@@ -23,7 +23,7 @@ export function deterministicNumber(text, min = 0, max = 100) {
 
 export function getTodayKey() {
   return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Toronto",
+    timeZone: "Asia/Seoul",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
