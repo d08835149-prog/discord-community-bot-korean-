@@ -1,4 +1,4 @@
-import {
+import { addMissionProgress } from "../../utils/missions.js";\nimport {
   SlashCommandBuilder,
   EmbedBuilder,
   ActionRowBuilder,
@@ -13,6 +13,10 @@ import {
   ensureUser,
   query,
 } from "../../database/db.js";
+
+import {
+  addMissionProgress,
+} from "../../utils/missions.js";
 
 const REWARD = 150;
 
@@ -87,6 +91,12 @@ export async function execute(interaction) {
           interaction.guildId,
           interaction.user.id,
         ]
+      );
+
+      await addMissionProgress(
+        interaction.guildId,
+        interaction.user.id,
+        "quiz_correct"
       );
     }
 

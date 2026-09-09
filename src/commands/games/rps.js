@@ -1,4 +1,4 @@
-import {
+import { addMissionProgress } from "../../utils/missions.js";\nimport {
   SlashCommandBuilder,
   EmbedBuilder,
 } from "discord.js";
@@ -150,6 +150,12 @@ export async function execute(interaction) {
       Number(finalResult.rows[0].ep);
 
     await client.query("COMMIT");
+
+    await addMissionProgress(
+      guildId,
+      userId,
+      "games_played"
+    );
 
     let title;
     let message;

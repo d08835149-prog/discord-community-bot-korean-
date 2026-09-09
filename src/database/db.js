@@ -73,6 +73,38 @@ export async function initDatabase() {
     );
   `);
 
+  await query(`
+  CREATE TABLE IF NOT EXISTS daily_missions (
+    guild_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    mission_date DATE NOT NULL,
+
+    attendance INTEGER NOT NULL DEFAULT 0,
+    quiz_correct INTEGER NOT NULL DEFAULT 0,
+    games_played INTEGER NOT NULL DEFAULT 0,
+
+    attendance_claimed BOOLEAN NOT NULL DEFAULT FALSE,
+    quiz_claimed BOOLEAN NOT NULL DEFAULT FALSE,
+    games_claimed BOOLEAN NOT NULL DEFAULT FALSE,
+    all_claimed BOOLEAN NOT NULL DEFAULT FALSE,
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    PRIMARY KEY (guild_id, user_id, mission_date)
+  );
+`);
+
+await query(`
+  CREATE TABLE IF NOT EXISTS achievement_claims (
+    guild_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    achievement_id TEXT NOT NULL,
+    claimed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    PRIMARY KEY (guild_id, user_id, achievement_id)
+  );
+`);
+
     await query(`
     CREATE TABLE IF NOT EXISTS user_items (
       guild_id TEXT NOT NULL,

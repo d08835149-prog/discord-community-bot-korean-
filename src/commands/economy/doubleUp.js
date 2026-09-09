@@ -1,4 +1,4 @@
-import {
+import { addMissionProgress } from "../../utils/missions.js";\nimport {
   SlashCommandBuilder,
   EmbedBuilder,
 } from "discord.js";
@@ -96,6 +96,12 @@ export async function execute(interaction) {
 
   const finalBalance =
     Number(updated.rows[0].ep);
+
+  await addMissionProgress(
+    guildId,
+    userId,
+    "games_played"
+  );
 
   const embed = new EmbedBuilder()
     .setTitle(

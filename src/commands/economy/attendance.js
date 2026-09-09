@@ -1,4 +1,4 @@
-import {
+import { addMissionProgress } from "../../utils/missions.js";\nimport {
   SlashCommandBuilder,
   EmbedBuilder,
 } from "discord.js";
@@ -7,6 +7,10 @@ import {
   ensureUser,
   query,
 } from "../../database/db.js";
+
+import {
+  addMissionProgress,
+} from "../../utils/missions.js";
 
 function torontoDate() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -124,6 +128,12 @@ export async function execute(interaction) {
   );
 
   const updated = update.rows[0];
+
+  await addMissionProgress(
+  guildId,
+  userId,
+  "attendance"
+  );
 
   const embed = new EmbedBuilder()
     .setTitle("✅ 출석 완료!")
