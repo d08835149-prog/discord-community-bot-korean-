@@ -1,0 +1,27 @@
+{
+  "name": "discord-community-bot-korean-",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "deploy": "node src/deploy-commands.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/d08835149-prog/discord-community-bot-korean-.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/d08835149-prog/discord-community-bot-korean-/issues"
+  },
+  "homepage": "https://github.com/d08835149-prog/discord-community-bot-korean-#readme",
+  "dependencies": {
+    "discord.js": "^14.27.0",
+    "dotenv": "^17.4.2",
+    "pg": "^8.23.0"
+  }
+}
