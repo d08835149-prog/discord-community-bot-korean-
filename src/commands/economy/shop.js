@@ -34,10 +34,40 @@ const PRODUCTS = {
     description: "승부 앞에서는 물러서지 않는다",
   },
 
+  열정러: {
+    price: 10000,
+    emoji: "🔥",
+    description: "누구보다 열심히 활동하는 멤버",
+  },
+
   전설: {
     price: 15000,
     emoji: "👑",
     description: "서버에 이름을 남긴 전설",
+  },
+
+  VIP: {
+    price: 25000,
+    emoji: "💎",
+    description: "평범함을 거부하는 특별한 멤버",
+  },
+
+  신화: {
+    price: 50000,
+    emoji: "🌌",
+    description: "전설을 넘어선 존재",
+  },
+
+  "서버의 지배자": {
+    price: 100000,
+    emoji: "🏆",
+    description: "서버 정상에 오른 자",
+  },
+
+  초월자: {
+    price: 250000,
+    emoji: "🌠",
+    description: "EP의 한계를 넘어선 존재",
   },
 };
 
