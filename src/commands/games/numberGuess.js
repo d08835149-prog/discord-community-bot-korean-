@@ -15,6 +15,10 @@ import {
 const activeGames = new Map();
 const REWARD = 300;
 
+function gameKey(guildId, userId) {
+  return `${guildId}:${userId}`;
+}
+
 export const data = new SlashCommandBuilder()
   .setName("숫자맞추기")
   .setDescription("1~100 사이 숫자를 맞혀보세요.")
@@ -25,16 +29,29 @@ export const data = new SlashCommandBuilder()
       .setMinValue(1)
       .setMaxValue(100)
       .setRequired(true)
+  )
+  .addBooleanOption(option =>
+    option
+      .setName("힌트권사용")
+      .setDescription("🎯 숫자 힌트권 1개를 사용합니다.")
+      .setRequired(false)
   );
 
 export async function execute(interaction) {
+  const guildId = interaction.guildId;
   const userId = interaction.user.id;
 
   const guess =
     interaction.options.getInteger("숫자");
 
+  const useHint =
+    interaction.options.getBoolean("힌트권사용") ?? false;
+
+  const key =
+    gameKey(guildId, userId);
+
   let game =
-    activeGames.get(userId);
+    activeGames.get(key);
 
   if (!game) {
     game = {
@@ -43,22 +60,26 @@ export async function execute(interaction) {
     };
 
     activeGames.set(
-      userId,
+      key,
       game
     );
   }
 
   game.attempts++;
 
+  // ─────────────────────────
+  // 정답
+  // ─────────────────────────
+
   if (guess === game.answer) {
     const attempts =
       game.attempts;
 
-    activeGames.delete(userId);
+    activeGames.delete(key);
 
     if (process.env.DATABASE_URL) {
       await ensureUser(
-        interaction.guildId,
+        guildId,
         userId
       );
 
@@ -73,7 +94,7 @@ export async function execute(interaction) {
         `,
         [
           REWARD,
-          interaction.guildId,
+          guildId,
           userId,
         ]
       );
@@ -93,11 +114,15 @@ export async function execute(interaction) {
     });
   }
 
+  // ─────────────────────────
+  // 10회 실패
+  // ─────────────────────────
+
   if (game.attempts >= 10) {
     const answer =
       game.answer;
 
-    activeGames.delete(userId);
+    activeGames.delete(key);
 
     return interaction.reply({
       content:
@@ -107,13 +132,114 @@ export async function execute(interaction) {
     });
   }
 
-  const hint =
+  const basicHint =
     guess < game.answer
       ? "📈 UP!"
       : "📉 DOWN!";
 
-  await interaction.reply(
-    `${hint}\n` +
+  // ─────────────────────────
+  // 숫자 힌트권 사용
+  // ─────────────────────────
+
+  if (useHint) {
+    if (!process.env.DATABASE_URL) {
+      return interaction.reply({
+        content:
+          `${basicHint}\n\n` +
+          "❌ 데이터베이스가 연결되지 않아 힌트권을 사용할 수 없습니다.",
+        ephemeral: true,
+      });
+    }
+
+    await ensureUser(
+      guildId,
+      userId
+    );
+
+    const itemResult =
+      await query(
+        `
+          UPDATE user_items
+          SET quantity = quantity - 1,
+              updated_at = NOW()
+          WHERE guild_id = $1
+            AND user_id = $2
+            AND item = '숫자 힌트권'
+            AND quantity > 0
+          RETURNING quantity
+        `,
+        [
+          guildId,
+          userId,
+        ]
+      );
+
+    if (itemResult.rows.length === 0) {
+      return interaction.reply({
+        content:
+          `${basicHint}\n\n` +
+          "❌ 🎯 **숫자 힌트권**을 가지고 있지 않습니다.\n" +
+          "`/상점 구매`에서 구매할 수 있습니다.\n\n" +
+          `현재 시도: **${game.attempts}/10**`,
+        ephemeral: true,
+      });
+    }
+
+    // 정답을 포함하는 최대 약 20칸 범위
+    let min =
+      Math.max(
+        1,
+        game.answer - randomNumber(5, 10)
+      );
+
+    let max =
+      Math.min(
+        100,
+        game.answer + randomNumber(5, 10)
+      );
+
+    // 너무 좁아지지 않도록 보정
+    if (max - min < 8) {
+      min = Math.max(
+        1,
+        game.answer - 5
+      );
+
+      max = Math.min(
+        100,
+        game.answer + 5
+      );
+    }
+
+    const remaining =
+      Number(
+        itemResult.rows[0].quantity
+      );
+
+    return interaction.reply({
+      embeds: [
+        new EmbedBuilder()
+          .setTitle("🎯 숫자 힌트!")
+          .setDescription(
+            `${basicHint}\n\n` +
+            `🔍 정답은 **${min} ~ ${max}** 사이에 있습니다!\n\n` +
+            `현재 시도: **${game.attempts}/10**\n` +
+            `남은 기회: **${10 - game.attempts}번**\n\n` +
+            `🎯 남은 힌트권: **${remaining}개**`
+          )
+          .setFooter({
+            text: "숫자 힌트권 1개 사용",
+          }),
+      ],
+    });
+  }
+
+  // ─────────────────────────
+  // 일반 오답
+  // ─────────────────────────
+
+  return interaction.reply(
+    `${basicHint}\n` +
     `현재 시도: **${game.attempts}/10**\n` +
     `남은 기회: **${10 - game.attempts}번**`
   );
