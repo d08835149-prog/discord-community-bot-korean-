@@ -1,4 +1,5 @@
-import { addMissionProgress } from "../../utils/missions.js";\nimport {
+import { addMissionProgress } from "../../utils/missions.js";
+import {
   SlashCommandBuilder,
   EmbedBuilder,
 } from "discord.js";

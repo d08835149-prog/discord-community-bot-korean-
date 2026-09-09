@@ -1,4 +1,5 @@
-import { addMissionProgress } from "../../utils/missions.js";\nimport {
+import { addMissionProgress } from "../../utils/missions.js";
+import {
   SlashCommandBuilder,
   EmbedBuilder,
 } from "discord.js";
@@ -7,10 +8,6 @@ import {
   ensureUser,
   query,
 } from "../../database/db.js";
-
-import {
-  addMissionProgress,
-} from "../../utils/missions.js";
 
 function torontoDate() {
   return new Intl.DateTimeFormat("en-CA", {
