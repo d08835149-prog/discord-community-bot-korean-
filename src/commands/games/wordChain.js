@@ -1,3 +1,4 @@
+import { addMissionProgress } from "../../utils/missions.js";
 import {
   SlashCommandBuilder,
   EmbedBuilder,
@@ -42,6 +43,14 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction) {
+  if (process.env.DATABASE_URL) {
+    await addMissionProgress(
+      interaction.guildId,
+      interaction.user.id,
+      "games_played"
+    );
+  }
+
   const userId = interaction.user.id;
   const input = interaction.options.getString("단어");
   let game = games.get(userId);

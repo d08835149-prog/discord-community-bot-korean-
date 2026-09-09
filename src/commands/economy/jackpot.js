@@ -1,3 +1,4 @@
+import { addMissionProgress } from "../../utils/missions.js";
 import {
   SlashCommandBuilder,
   EmbedBuilder,
@@ -299,6 +300,12 @@ export async function execute(interaction) {
     }
 
     await client.query("COMMIT");
+
+    await addMissionProgress(
+      guildId,
+      userId,
+      "games_played"
+    );
 
     // ─────────────────────────
     // 결과 출력

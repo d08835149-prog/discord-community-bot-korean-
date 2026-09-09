@@ -1,3 +1,4 @@
+import { addMissionProgress } from "../../utils/missions.js";
 import {
   SlashCommandBuilder,
   EmbedBuilder,
@@ -54,6 +55,14 @@ export async function execute(interaction) {
     activeGames.get(key);
 
   if (!game) {
+    if (process.env.DATABASE_URL) {
+      await addMissionProgress(
+        interaction.guildId,
+        interaction.user.id,
+        "games_played"
+      );
+    }
+
     game = {
       answer: randomNumber(1, 100),
       attempts: 0,

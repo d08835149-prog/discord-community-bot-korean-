@@ -22,6 +22,14 @@ export const data = new SlashCommandBuilder()
   .setDescription("랜덤 객관식 퀴즈에 도전합니다.");
 
 export async function execute(interaction) {
+  if (process.env.DATABASE_URL) {
+    await addMissionProgress(
+      interaction.guildId,
+      interaction.user.id,
+      "games_played"
+    );
+  }
+
   const quiz = randomItem(generalQuiz);
 
   const labels = ["A", "B", "C", "D"];
