@@ -73,6 +73,18 @@ export async function initDatabase() {
     );
   `);
 
+    await query(`
+    CREATE TABLE IF NOT EXISTS user_items (
+      guild_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      item TEXT NOT NULL,
+      quantity INTEGER NOT NULL DEFAULT 0,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+      PRIMARY KEY (guild_id, user_id, item)
+    );
+  `);
+
   console.log("✅ PostgreSQL 테이블 준비 완료");
 }
 

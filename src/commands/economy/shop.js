@@ -9,7 +9,7 @@ import {
   query,
 } from "../../database/db.js";
 
-const PRODUCTS = {
+const TITLES = {
   새싹: {
     price: 1000,
     emoji: "🌱",
@@ -71,8 +71,50 @@ const PRODUCTS = {
   },
 };
 
+const ITEMS = {
+  "운세 재뽑기권": {
+    price: 500,
+    emoji: "🔮",
+    description: "오늘의 운세를 한 번 다시 뽑을 수 있습니다.",
+  },
+
+  "숫자 힌트권": {
+    price: 700,
+    emoji: "🎯",
+    description: "숫자맞추기에서 강력한 힌트를 받을 수 있습니다.",
+  },
+
+  "잭팟 티켓": {
+    price: 1000,
+    emoji: "🎟️",
+    description: "잭팟에서 사용할 수 있는 특별 티켓입니다.",
+  },
+
+  "랜덤 박스": {
+    price: 3000,
+    emoji: "🎁",
+    description: "열면 랜덤한 EP 보상을 받을 수 있습니다.",
+  },
+};
+
+const ALL_PRODUCTS = {
+  ...TITLES,
+  ...ITEMS,
+};
+
 function productChoices() {
-  return Object.entries(PRODUCTS).map(
+  return Object.entries(ALL_PRODUCTS).map(
+    ([name, data]) => ({
+      name:
+        `${data.emoji} ${name} - ` +
+        `${data.price.toLocaleString()} EP`,
+      value: name,
+    })
+  );
+}
+
+function titleChoices() {
+  return Object.entries(TITLES).map(
     ([name, data]) => ({
       name:
         `${data.emoji} ${name} - ` +
@@ -95,11 +137,11 @@ export const data = new SlashCommandBuilder()
   .addSubcommand(subcommand =>
     subcommand
       .setName("구매")
-      .setDescription("EP로 칭호를 구매합니다.")
+      .setDescription("EP로 상품을 구매합니다.")
       .addStringOption(option =>
         option
           .setName("상품")
-          .setDescription("구매할 칭호")
+          .setDescription("구매할 상품")
           .setRequired(true)
           .addChoices(...productChoices())
       )
@@ -114,14 +156,14 @@ export const data = new SlashCommandBuilder()
           .setName("칭호")
           .setDescription("장착할 칭호")
           .setRequired(true)
-          .addChoices(...productChoices())
+          .addChoices(...titleChoices())
       )
   )
 
   .addSubcommand(subcommand =>
     subcommand
       .setName("보유")
-      .setDescription("내가 가지고 있는 칭호를 확인합니다.")
+      .setDescription("내가 가지고 있는 칭호와 아이템을 확인합니다.")
   );
 
 export async function execute(interaction) {
@@ -140,6 +182,10 @@ export async function execute(interaction) {
   const subcommand =
     interaction.options.getSubcommand();
 
+  // ─────────────────────────
+  // 상점 보기
+  // ─────────────────────────
+
   if (subcommand === "보기") {
     const userResult = await query(
       `
@@ -154,8 +200,16 @@ export async function execute(interaction) {
     const balance =
       Number(userResult.rows[0].ep);
 
-    const lines =
-      Object.entries(PRODUCTS).map(
+    const titleLines =
+      Object.entries(TITLES).map(
+        ([name, product]) =>
+          `${product.emoji} **${name}**\n` +
+          `${product.description}\n` +
+          `💰 ${product.price.toLocaleString()} EP`
+      );
+
+    const itemLines =
+      Object.entries(ITEMS).map(
         ([name, product]) =>
           `${product.emoji} **${name}**\n` +
           `${product.description}\n` +
@@ -165,11 +219,16 @@ export async function execute(interaction) {
     const embed = new EmbedBuilder()
       .setTitle("🛒 EP 상점")
       .setDescription(
-        `${lines.join("\n\n")}\n\n` +
-        `현재 잔액: **${balance.toLocaleString()} EP**`
+        `## 🏷️ 칭호\n\n` +
+        `${titleLines.join("\n\n")}\n\n` +
+        `━━━━━━━━━━━━━━━━━━\n\n` +
+        `## 🎒 아이템\n\n` +
+        `${itemLines.join("\n\n")}\n\n` +
+        `━━━━━━━━━━━━━━━━━━\n\n` +
+        `💰 현재 잔액: **${balance.toLocaleString()} EP**`
       )
       .setFooter({
-        text: "/상점 구매 로 칭호를 구매하세요.",
+        text: "/상점 구매 로 상품을 구매하세요.",
       });
 
     return interaction.reply({
@@ -177,8 +236,12 @@ export async function execute(interaction) {
     });
   }
 
+  // ─────────────────────────
+  // 보유 상품
+  // ─────────────────────────
+
   if (subcommand === "보유") {
-    const result = await query(
+    const titlesResult = await query(
       `
         SELECT title
         FROM user_titles
@@ -189,55 +252,84 @@ export async function execute(interaction) {
       [guildId, userId]
     );
 
-    if (result.rows.length === 0) {
+    const itemsResult = await query(
+      `
+        SELECT item, quantity
+        FROM user_items
+        WHERE guild_id = $1
+          AND user_id = $2
+          AND quantity > 0
+        ORDER BY item ASC
+      `,
+      [guildId, userId]
+    );
+
+    const titleText =
+      titlesResult.rows.length > 0
+        ? titlesResult.rows
+            .map(row => {
+              const product =
+                TITLES[row.title];
+
+              return (
+                `${product?.emoji ?? "🏷️"} ` +
+                `**${row.title}**`
+              );
+            })
+            .join("\n")
+        : "없음";
+
+    const itemText =
+      itemsResult.rows.length > 0
+        ? itemsResult.rows
+            .map(row => {
+              const product =
+                ITEMS[row.item];
+
+              return (
+                `${product?.emoji ?? "📦"} ` +
+                `**${row.item}** × ${row.quantity}`
+              );
+            })
+            .join("\n")
+        : "없음";
+
+    const embed = new EmbedBuilder()
+      .setTitle("🎒 내 보관함")
+      .addFields(
+        {
+          name: "🏷️ 보유 칭호",
+          value: titleText,
+        },
+        {
+          name: "🎁 보유 아이템",
+          value: itemText,
+        }
+      );
+
+    return interaction.reply({
+      embeds: [embed],
+    });
+  }
+
+  // ─────────────────────────
+  // 칭호 장착
+  // ─────────────────────────
+
+  if (subcommand === "장착") {
+    const selected =
+      interaction.options.getString("칭호");
+
+    const product =
+      TITLES[selected];
+
+    if (!product) {
       return interaction.reply({
-        content:
-          "📦 아직 보유한 칭호가 없습니다.\n" +
-          "`/상점 보기`에서 확인해보세요.",
+        content: "❌ 존재하지 않는 칭호입니다.",
         ephemeral: true,
       });
     }
 
-    const titles =
-      result.rows
-        .map(row => {
-          const product =
-            PRODUCTS[row.title];
-
-          return (
-            `${product?.emoji ?? "🏷️"} ` +
-            `**${row.title}**`
-          );
-        })
-        .join("\n");
-
-    return interaction.reply({
-      embeds: [
-        new EmbedBuilder()
-          .setTitle("📦 보유 중인 칭호")
-          .setDescription(titles),
-      ],
-    });
-  }
-
-  const selected =
-    interaction.options.getString(
-      subcommand === "구매"
-        ? "상품"
-        : "칭호"
-    );
-
-  const product =
-    PRODUCTS[selected];
-
-  if (!product) {
-    return interaction.reply({
-      content: "❌ 존재하지 않는 상품입니다.",
-      ephemeral: true,
-    });
-  }
-
-  if (subcommand === "장착") {
     const owned = await query(
       `
         SELECT 1
@@ -273,38 +365,35 @@ export async function execute(interaction) {
     );
   }
 
+  // ─────────────────────────
+  // 구매
+  // ─────────────────────────
+
   if (subcommand === "구매") {
+    const selected =
+      interaction.options.getString("상품");
+
+    const product =
+      ALL_PRODUCTS[selected];
+
+    if (!product) {
+      return interaction.reply({
+        content: "❌ 존재하지 않는 상품입니다.",
+        ephemeral: true,
+      });
+    }
+
+    const isTitle =
+      Object.prototype.hasOwnProperty.call(
+        TITLES,
+        selected
+      );
+
     const client =
       await pool.connect();
 
     try {
       await client.query("BEGIN");
-
-      const ownedResult =
-        await client.query(
-          `
-            SELECT 1
-            FROM user_titles
-            WHERE guild_id = $1
-              AND user_id = $2
-              AND title = $3
-          `,
-          [
-            guildId,
-            userId,
-            selected,
-          ]
-        );
-
-      if (ownedResult.rows.length > 0) {
-        await client.query("ROLLBACK");
-
-        return interaction.reply({
-          content:
-            `❌ 이미 **${selected}** 칭호를 가지고 있습니다.`,
-          ephemeral: true,
-        });
-      }
 
       const userResult =
         await client.query(
@@ -319,9 +408,7 @@ export async function execute(interaction) {
         );
 
       const balance =
-        Number(
-          userResult.rows[0].ep
-        );
+        Number(userResult.rows[0].ep);
 
       if (balance < product.price) {
         await client.query("ROLLBACK");
@@ -333,6 +420,82 @@ export async function execute(interaction) {
             `보유: **${balance.toLocaleString()} EP**`,
           ephemeral: true,
         });
+      }
+
+      // 칭호 구매
+      if (isTitle) {
+        const ownedResult =
+          await client.query(
+            `
+              SELECT 1
+              FROM user_titles
+              WHERE guild_id = $1
+                AND user_id = $2
+                AND title = $3
+            `,
+            [
+              guildId,
+              userId,
+              selected,
+            ]
+          );
+
+        if (ownedResult.rows.length > 0) {
+          await client.query("ROLLBACK");
+
+          return interaction.reply({
+            content:
+              `❌ 이미 **${selected}** 칭호를 가지고 있습니다.`,
+            ephemeral: true,
+          });
+        }
+
+        await client.query(
+          `
+            INSERT INTO user_titles (
+              guild_id,
+              user_id,
+              title
+            )
+            VALUES ($1, $2, $3)
+          `,
+          [
+            guildId,
+            userId,
+            selected,
+          ]
+        );
+      }
+
+      // 아이템 구매
+      else {
+        await client.query(
+          `
+            INSERT INTO user_items (
+              guild_id,
+              user_id,
+              item,
+              quantity
+            )
+            VALUES ($1, $2, $3, 1)
+
+            ON CONFLICT (
+              guild_id,
+              user_id,
+              item
+            )
+
+            DO UPDATE SET
+              quantity =
+                user_items.quantity + 1,
+              updated_at = NOW()
+          `,
+          [
+            guildId,
+            userId,
+            selected,
+          ]
+        );
       }
 
       await client.query(
@@ -350,22 +513,6 @@ export async function execute(interaction) {
         ]
       );
 
-      await client.query(
-        `
-          INSERT INTO user_titles (
-            guild_id,
-            user_id,
-            title
-          )
-          VALUES ($1, $2, $3)
-        `,
-        [
-          guildId,
-          userId,
-          selected,
-        ]
-      );
-
       await client.query("COMMIT");
 
       return interaction.reply({
@@ -374,8 +521,12 @@ export async function execute(interaction) {
             .setTitle("🛍️ 구매 완료!")
             .setDescription(
               `${product.emoji} **「${selected}」**\n\n` +
-              `-${product.price.toLocaleString()} EP\n\n` +
-              `\`/상점 장착\`으로 사용할 수 있습니다.`
+              `💸 -${product.price.toLocaleString()} EP\n\n` +
+              (
+                isTitle
+                  ? "`/상점 장착`으로 칭호를 사용할 수 있습니다."
+                  : "🎒 아이템이 보관함에 추가되었습니다."
+              )
             ),
         ],
       });
